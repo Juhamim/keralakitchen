@@ -1,0 +1,21 @@
+{
+  "name": "Kerala Kitchen Onam Sadya Booking",
+  "short_name": "KeralaSadya",
+  "description": "Pre-book authentic Kerala Onam Sadya online. Traditional 26-item feast served on banana leaf.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDF8",
+  "theme_color": "#2E7D32",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?auto=format&fit=crop&q=80&w=192",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?auto=format&fit=crop&q=80&w=512",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   KERALA KITCHEN ONAM SADYA - DESIGN SYSTEM
+   Authentic Kerala Festival Visual Identity
+   ======================================== */
+
+:root {
+  --background: #FFFDF8;
+  --foreground: #2D1810;
+  --font-playfair: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  --font-inter: 'Inter', 'Poppins', system-ui, sans-serif;
+  
+  /* Kerala Cultural Color Tokens */
+  --kasavu-gold: #D4AF37;
+  --temple-gold: #C5960C;
+  --banana-leaf: #2E7D32;
+  --deep-leaf: #1B5E20;
+  --light-leaf: #4CAF50;
+  --coconut-cream: #FFFDF8;
+  --ivory-silk: #FFF8EC;
+  --warm-cream: #FAF3E7;
+  --terracotta: #8E2430;
+  --clay-red: #C0392B;
+  --turmeric: #F9A825;
+  --sandalwood: #D2691E;
+  --laterite: #A0522D;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-serif {
+  font-family: var(--font-playfair);
+  letter-spacing: -0.01em;
+}
+
+/* ========================================
+   GLASSMORPHISM CARDS
+   ======================================== */
+.glass-card {
+  background: rgba(255, 253, 248, 0.88);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(212, 175, 55, 0.18);
+  box-shadow: 
+    0 10px 40px -8px rgba(46, 125, 50, 0.06),
+    0 4px 12px -2px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 24px 48px -12px rgba(46, 125, 50, 0.14),
+    0 0 20px rgba(212, 175, 55, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+/* ========================================
+   GRADIENT TEXT EFFECTS
+   ======================================== */
+.gold-gradient-text {
+  background: linear-gradient(135deg, #8B6914 0%, #D4AF37 35%, #F9A825 65%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.green-gradient-text {
+  background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 40%, #43A047 70%, #2E7D32 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.maroon-gradient-text {
+  background: linear-gradient(135deg, #621B24 0%, #8E2430 50%, #B73242 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ========================================
+   KERALA DECORATIVE PATTERNS
+   ======================================== */
+
+/* Pookalam Floral Radial Pattern */
+.bg-pookalam-pattern {
+  background-color: #FFF8EC;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 0% 0%, rgba(46, 125, 50, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(142, 36, 48, 0.04) 0%, transparent 40%);
+}
+
+/* Banana Leaf Texture Background */
+.bg-banana-leaf-texture {
+  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 25%, #A5D6A7 50%, #C8E6C9 75%, #E8F5E9 100%);
+  position: relative;
+}
+.bg-banana-leaf-texture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 18px,
+    rgba(46, 125, 50, 0.08) 18px,
+    rgba(46, 125, 50, 0.08) 19px
+  );
+  pointer-events: none;
+}
+
+/* Kasavu Saree Gold Border */
+.border-kasavu {
+  border-image: linear-gradient(180deg, #D4AF37 0%, #F9A825 30%, #D4AF37 50%, #B78103 80%, #D4AF37 100%) 1;
+}
+
+/* Kerala Temple Bell Pattern Divider */
+.divider-temple {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #D4AF37 10%,
+    #B78103 25%,
+    #D4AF37 40%,
+    #2E7D32 50%,
+    #D4AF37 60%,
+    #B78103 75%,
+    #D4AF37 90%,
+    transparent 100%
+  );
+  border-radius: 2px;
+}
+
+/* Nilavilakku (Traditional Lamp) Glow Effect */
+.lamp-glow {
+  box-shadow: 
+    0 0 20px rgba(249, 168, 37, 0.3),
+    0 0 40px rgba(249, 168, 37, 0.15),
+    0 0 60px rgba(212, 175, 55, 0.08);
+}
+
+/* ========================================
+   ANIMATION KEYFRAMES
+   ======================================== */
+
+/* Floating petal animation */
+@keyframes float-petal {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+  25% { transform: translateY(-12px) rotate(15deg) scale(1.05); opacity: 1; }
+  50% { transform: translateY(-6px) rotate(-8deg) scale(0.98); opacity: 0.85; }
+  75% { transform: translateY(-14px) rotate(10deg) scale(1.02); opacity: 0.95; }
+  100% { transform: translateY(0) rotate(0deg) scale(1); opacity: 0.9; }
+}
+
+/* Gentle sway like coconut palm */
+@keyframes palm-sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+/* Nilavilakku flame flicker */
+@keyframes flame-flicker {
+  0%, 100% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  25% { opacity: 0.85; transform: scaleY(1.1) scaleX(0.95); }
+  50% { opacity: 0.95; transform: scaleY(0.95) scaleX(1.05); }
+  75% { opacity: 0.88; transform: scaleY(1.05) scaleX(0.98); }
+}
+
+/* Fade slide up entrance */
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Countdown number flip */
+@keyframes count-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* Gold shimmer sweep */
+@keyframes gold-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Pookalam rotate */
+@keyframes pookalam-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float-petal { animation: float-petal 7s ease-in-out infinite; }
+.animate-palm-sway { animation: palm-sway 8s ease-in-out infinite; }
+.animate-flame { animation: flame-flicker 2s ease-in-out infinite; }
+.animate-fade-up { animation: fade-slide-up 0.6s ease-out forwards; }
+.animate-count-pulse { animation: count-pulse 1s ease-in-out infinite; }
+.animate-gold-shimmer { 
+  background-size: 200% 100%;
+  animation: gold-shimmer 3s linear infinite;
+}
+.animate-pookalam { animation: pookalam-rotate 30s linear infinite; }
+
+/* Staggered fade-up delays for children */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+
+/* ========================================
+   SECTION PATTERNS & OVERLAYS
+   ======================================== */
+
+/* Soft warm gradient overlay for sections */
+.section-warm {
+  background: linear-gradient(180deg, #FFFDF8 0%, #FFF8EC 40%, #FAF3E7 70%, #FFFDF8 100%);
+}
+
+/* Festival ribbon top border */
+.ribbon-top {
+  position: relative;
+}
+.ribbon-top::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #2E7D32, #D4AF37, #8E2430, #D4AF37, #2E7D32);
+  z-index: 10;
+}
+
+/* ========================================
+   CUSTOM SCROLLBAR (Kerala Theme)
+   ======================================== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #FAF3E7; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #D4AF37, #2E7D32);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #B78103, #1B5E20);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Kerala inspired link hover effect */
+.kerala-link {
+  position: relative;
+  text-decoration: none;
+}
+.kerala-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(90deg, #D4AF37, #2E7D32);
+  transition: width 0.3s ease;
+}
+.kerala-link:hover::after {
+  width: 100%;
+}
+
+/* Veg badge pulse */
+.veg-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(212, 175, 55, 0.3);
+  color: #1B5E20;
+}
