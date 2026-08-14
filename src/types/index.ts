@@ -1,3 +1,48 @@
+export type UserRole = 'admin' | 'staff' | 'customer';
+
+export interface AuthUser {
+  id?: string;
+  username: string;
+  name: string;
+  email?: string;
+  role: UserRole;
+  avatarUrl?: string;
+  loggedInAt: string;
+}
+
+export interface UserProfile {
+  id: string;
+  authUserId?: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  avatarUrl?: string;
+  role: UserRole;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SavedAddress {
+  id: string;
+  userId: string;
+  label: 'Home' | 'Work' | 'Other';
+  address: string;
+  landmark?: string;
+  pincode?: string;
+  deliveryInstructions?: string;
+  latitude?: number;
+  longitude?: number;
+  isDefault?: boolean;
+  createdAt?: string;
+}
+
+export interface CredentialsEntry {
+  username: string;
+  password: string;
+  name: string;
+  role: UserRole;
+}
+
 export type FulfillmentType = 'pickup' | 'delivery';
 
 export type OrderStatus = 
@@ -36,6 +81,16 @@ export interface ExtraItem {
   quantity: number;
 }
 
+export interface LocationData {
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  address?: string;
+  landmark?: string;
+  deliveryInstructions?: string;
+  isDetected: boolean;
+}
+
 export interface BookingCustomerDetails {
   name: string;
   phone: string;
@@ -44,6 +99,10 @@ export interface BookingCustomerDetails {
   landmark?: string;
   pincode?: string;
   notes?: string;
+  deliveryInstructions?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
 }
 
 export interface Coupon {
@@ -58,6 +117,11 @@ export interface Coupon {
 export interface Booking {
   id: string;
   bookingNumber: string;
+  userId?: string | null;
+  isGuest: boolean;
+  guestName?: string;
+  guestPhone?: string;
+  guestEmail?: string;
   createdAt: string;
   date: string;
   timeSlot: string;
@@ -69,6 +133,16 @@ export interface Booking {
   };
   extras: ExtraItem[];
   customer: BookingCustomerDetails;
+  
+  // Delivery location & instructions
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
+  deliveryAddress?: string;
+  landmark?: string;
+  deliveryInstructions?: string;
+  deliveryOtp?: string;
+
   couponApplied?: Coupon;
   subtotal: number;
   discount: number;

@@ -4,10 +4,15 @@ import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
 import { SADYA_MENU_ITEMS, EXTRAS_MENU, AVAILABLE_SLOTS, ONAM_FESTIVAL_DATES, VALID_COUPONS } from '@/lib/constants';
-import { formatINR, isValidKeralaPincode } from '@/lib/utils';
+import { formatINR, formatDate, isValidKeralaPincode } from '@/lib/utils';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { Booking } from '@/types';
 import confetti from 'canvas-confetti';
+import AuthCheckoutModal from '@/components/auth/AuthCheckoutModal';
+import LocationSelector from '@/components/booking/LocationSelector';
+import SavedAddressesManager from '@/components/customer/SavedAddressesManager';
+import { signInWithGoogle, isSupabaseConfigured } from '@/lib/supabase/client';
+
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -24,7 +29,8 @@ import {
   ArrowLeft,
   Sparkles,
   ShoppingBag,
-  Info
+  Info,
+  ShieldCheck,
 } from 'lucide-react';
 
 import { FestivalFireIcon } from '@/components/common/SvgIcons';
@@ -34,25 +40,32 @@ export default function BookingWizard() {
   const router = useRouter();
   const sadyaParam = searchParams.get('sadya');
 
-  const { draft, updateDraft, createBookingFromDraft } = useBookingStore();
+  const {
+    draft,
+    updateDraft,
+    createBookingFromDraft,
+    savedAddresses,
+    selectSavedAddress,
+    addSavedAddress,
+    authUser,
+    linkGuestBookingToUser,
+  } = useBookingStore();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Default selected item from query or draft
   const activeSadya = SADYA_MENU_ITEMS.find((s) => s.id === (sadyaParam || draft.selectedSadyaId)) || SADYA_MENU_ITEMS[0];
 
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 8));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  // Calculations
   const adultPrice = activeSadya.price;
   const childPrice = Math.round(activeSadya.price * 0.6);
   const baseTotal = adultPrice * draft.adultsCount + childPrice * draft.childrenCount;
 
-  // Calculate extras total
   let extrasTotal = 0;
   EXTRAS_MENU.forEach((ext) => {
     const qty = draft.extras[ext.id] || 0;
@@ -61,10 +74,10 @@ export default function BookingWizard() {
 
   const subtotal = baseTotal + extrasTotal;
 
-  // Coupon
   let discount = 0;
   const appliedCouponObj = VALID_COUPONS.find(c => c.code.toUpperCase() === draft.couponCode.toUpperCase());
-  if (appliedCouponObj && subtotal >= appliedCouponObj.minOrderValue) {
+  const couponIsValid = appliedCouponObj && new Date(appliedCouponObj.expiryDate).getTime() >= Date.now();
+  if (couponIsValid && subtotal >= appliedCouponObj.minOrderValue) {
     if (appliedCouponObj.discountType === 'percentage') {
       discount = Math.round((subtotal * appliedCouponObj.discountValue) / 100);
     } else {
@@ -81,6 +94,11 @@ export default function BookingWizard() {
     const coupon = VALID_COUPONS.find((c) => c.code.toUpperCase() === codeToApply.trim().toUpperCase());
     if (!coupon) {
       setCouponError('Invalid coupon code. Try ONAM2026 or EARLYBIRD');
+      return;
+    }
+    if (new Date(coupon.expiryDate).getTime() < Date.now()) {
+      setCouponError(`Coupon ${coupon.code} has expired (valid until ${formatDate(coupon.expiryDate)}).`);
+      updateDraft({ couponCode: '' });
       return;
     }
     if (subtotal < coupon.minOrderValue) {
@@ -108,22 +126,20 @@ export default function BookingWizard() {
       setCurrentStep(5);
       return;
     }
-    if (draft.fulfillment === 'delivery' && (!draft.customerAddress || !draft.customerPincode)) {
-      alert('Please provide your complete Delivery Address and PIN code.');
+    if (draft.fulfillment === 'delivery' && !draft.customerAddress) {
+      alert('Please provide your complete Delivery Address.');
       setCurrentStep(5);
       return;
     }
 
     setIsProcessing(true);
 
-    // Simulate Payment Gateway delay
     setTimeout(() => {
       const booking = createBookingFromDraft();
       setConfirmedBooking(booking);
       setIsProcessing(false);
       setCurrentStep(8);
 
-      // Trigger Confetti!
       try {
         confetti({
           particleCount: 120,
@@ -134,7 +150,23 @@ export default function BookingWizard() {
       } catch (e) {
         console.log(e);
       }
-    }, 1500);
+    }, 1200);
+  };
+
+  const handleGuestAccountConversion = async () => {
+    if (!confirmedBooking) return;
+    try {
+      if (isSupabaseConfigured) {
+        await signInWithGoogle(`/book?link_booking=${confirmedBooking.id}`);
+      } else if (authUser) {
+        await linkGuestBookingToUser(confirmedBooking.id, authUser);
+        alert('Your guest booking has been linked to your Google account!');
+      } else {
+        alert('Google Authentication ready! Connect your Google account to save address and bookings.');
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const steps = [
@@ -142,7 +174,7 @@ export default function BookingWizard() {
     { num: 2, label: 'Slot & Mode' },
     { num: 3, label: 'Quantities' },
     { num: 4, label: 'Extras' },
-    { num: 5, label: 'Details' },
+    { num: 5, label: 'Auth & Location' },
     { num: 6, label: 'Offers' },
     { num: 7, label: 'Payment' },
     { num: 8, label: 'Confirmed' },
@@ -193,9 +225,9 @@ export default function BookingWizard() {
       <div className="bg-white border border-gold/30 rounded-3xl p-6 sm:p-8 shadow-card relative">
         {/* STEP 1: Date Selection */}
         {currentStep === 1 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 1 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 1 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
                 Choose Festival Date
               </h2>
@@ -243,72 +275,78 @@ export default function BookingWizard() {
           </div>
         )}
 
-        {/* STEP 2: Fulfillment & Time Slot */}
+        {/* STEP 2: Slot & Fulfillment Mode */}
         {currentStep === 2 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 2 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 2 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
-                Pickup or Home Delivery
+                Fulfillment Mode & Slot
               </h2>
-              <p className="text-sm text-slate-600">Select how you want to receive your Sadya and choose a time slot.</p>
+              <p className="text-sm text-slate-600">Choose doorstep thermal delivery or hotel counter pickup.</p>
             </div>
 
-            {/* Fulfillment Mode Toggle */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div
                 onClick={() => updateDraft({ fulfillment: 'delivery' })}
-                className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center text-center ${
+                className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                   draft.fulfillment === 'delivery'
                     ? 'border-leaf bg-coconut-100 shadow-md'
-                    : 'border-slate-200 bg-white'
+                    : 'border-slate-200 hover:border-gold/50 bg-white'
                 }`}
               >
-                <MapPin className="w-8 h-8 text-leaf mb-2" />
-                <span className="font-serif font-bold text-slate-900 text-lg">Doorstep Delivery</span>
-                <span className="text-xs text-slate-500 mt-1">Delivered in hot thermal box (+₹50)</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-leaf text-white flex items-center justify-center font-bold">
+                    🚗
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-slate-900">Doorstep Delivery</h3>
+                    <span className="text-xs text-slate-500">Thermal leak-proof boxes</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">Delivered fresh in eco-friendly plant leaf boxes to your home.</p>
               </div>
 
               <div
                 onClick={() => updateDraft({ fulfillment: 'pickup' })}
-                className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center text-center ${
+                className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
                   draft.fulfillment === 'pickup'
                     ? 'border-leaf bg-coconut-100 shadow-md'
-                    : 'border-slate-200 bg-white'
+                    : 'border-slate-200 hover:border-gold/50 bg-white'
                 }`}
               >
-                <ShoppingBag className="w-8 h-8 text-gold-deep mb-2" />
-                <span className="font-serif font-bold text-slate-900 text-lg">Hotel Counter Pickup</span>
-                <span className="text-xs text-slate-500 mt-1">Zero delivery fee + Queue token</span>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-gold text-slate-900 flex items-center justify-center font-bold">
+                    🏪
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-slate-900">Hotel Counter Pickup</h3>
+                    <span className="text-xs text-slate-500">Fast token QR verification</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 mt-2">Collect directly at Kerala Kitchen express takeaway counters.</p>
               </div>
             </div>
 
-            {/* Time Slot Picker */}
-            <div>
-              <label className="block text-sm font-bold text-slate-800 mb-3">Select Time Slot:</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {/* Time Slot Selector */}
+            <div className="space-y-3 pt-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Select Prefered Time Slot:
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {AVAILABLE_SLOTS.map((slot) => {
                   const isSelected = draft.timeSlot === slot.time;
                   return (
                     <button
                       key={slot.time}
-                      disabled={!slot.isAvailable}
                       onClick={() => updateDraft({ timeSlot: slot.time })}
-                      className={`p-3.5 rounded-2xl border-2 text-center transition-all ${
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
                         isSelected
-                          ? 'border-gold bg-gold-soft font-bold text-slate-900 shadow-sm'
-                          : slot.isAvailable
-                          ? 'border-slate-200 bg-white hover:border-gold'
-                          : 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed'
+                          ? 'border-leaf bg-leaf text-white shadow'
+                          : 'border-slate-200 hover:border-gold text-slate-800 bg-white'
                       }`}
                     >
-                      <div className="flex items-center justify-center gap-1.5 font-serif font-bold text-sm">
-                        <Clock className="w-3.5 h-3.5" />
-                        {slot.time}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-1">
-                        {slot.maxOrders - slot.bookedCount} slots left
-                      </div>
+                      {slot.time}
                     </button>
                   );
                 })}
@@ -327,43 +365,29 @@ export default function BookingWizard() {
                 onClick={nextStep}
                 className="bg-leaf hover:bg-leaf-dark text-white font-bold px-8 py-3.5 rounded-full shadow-md flex items-center gap-2"
               >
-                <span>Continue to Quantities</span>
+                <span>Select Quantities</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 3: Quantity & Pax */}
+        {/* STEP 3: Quantity Calculator */}
         {currentStep === 3 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 3 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 3 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
-                Selected Package & Pax Quantity
+                Meal Quantities & Pax
               </h2>
-              <p className="text-sm text-slate-600">Adjust the number of Adult and Child Sadya meals needed.</p>
+              <p className="text-sm text-slate-600">Selected Sadya: <strong>{activeSadya.name}</strong> ({formatINR(activeSadya.price)}/adult)</p>
             </div>
 
-            {/* Selected Package Banner */}
-            <div className="p-4 bg-coconut-100 rounded-2xl border border-gold/30 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-maroon uppercase">Selected Sadya</span>
-                <h4 className="font-serif font-bold text-lg text-slate-900">{activeSadya.name}</h4>
-                <p className="text-xs text-slate-600">{activeSadya.itemCount} Delicacies Included</p>
-              </div>
-              <div className="text-right">
-                <span className="font-serif font-extrabold text-xl text-leaf-dark">{formatINR(activeSadya.price)}</span>
-                <span className="text-xs text-slate-500 block">/ Adult Pax</span>
-              </div>
-            </div>
-
-            {/* Quantity Controls */}
-            <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-white border border-slate-200 flex items-center justify-between">
+            <div className="space-y-4 max-w-md">
+              <div className="p-4 bg-coconut-100 rounded-2xl border border-gold/40 flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-slate-900">Adult Sadya Meals</h4>
-                  <p className="text-xs text-slate-500">Full 26-item feast served with Payasam ({formatINR(adultPrice)} each)</p>
+                  <h4 className="font-serif font-bold text-slate-900 text-base">Adult Sadya Meals</h4>
+                  <p className="text-xs text-slate-500">Full 26-item authentic banquet serving</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -384,10 +408,10 @@ export default function BookingWizard() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-slate-200 flex items-center justify-between">
+              <div className="p-4 bg-coconut-100 rounded-2xl border border-gold/40 flex items-center justify-between">
                 <div>
-                  <h4 className="font-bold text-slate-900">Child Sadya Meals</h4>
-                  <p className="text-xs text-slate-500">Kids portion size ({formatINR(childPrice)} each)</p>
+                  <h4 className="font-serif font-bold text-slate-900 text-base">Child Sadya Meals</h4>
+                  <p className="text-xs text-slate-500">Half portion (40% discount)</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -430,9 +454,9 @@ export default function BookingWizard() {
 
         {/* STEP 4: Payasam & Extras */}
         {currentStep === 4 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 4 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 4 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
                 Add Extra Payasam & Savories
               </h2>
@@ -484,102 +508,103 @@ export default function BookingWizard() {
                 onClick={nextStep}
                 className="bg-leaf hover:bg-leaf-dark text-white font-bold px-8 py-3.5 rounded-full shadow-md flex items-center gap-2"
               >
-                <span>Customer Contact Details</span>
+                <span>Auth & Location Capture</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 5: Customer Details */}
+        {/* STEP 5: Auth Choice, Contact & Dual Location Capture */}
         {currentStep === 5 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 5 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 5 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
-                Customer & Delivery Information
+                Customer & Delivery Location
               </h2>
-              <p className="text-sm text-slate-600">Enter contact details for booking confirmation and receipt.</p>
+              <p className="text-sm text-slate-600">Choose Google Auth or Guest checkout & capture delivery address.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Anjali Kurup"
-                  value={draft.customerName}
-                  onChange={(e) => updateDraft({ customerName: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium"
-                />
+            {/* 1. AUTHENTICATION SELECTION MODAL CARD (Section 1 & 2 Requirement) */}
+            <AuthCheckoutModal
+              authUser={authUser}
+              isGuest={draft.isGuest}
+              onSelectGuest={() => updateDraft({ isGuest: true })}
+              onSelectGoogle={() => updateDraft({ isGuest: false })}
+            />
+
+            {/* 2. CONTACT DETAILS INPUTS */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h4 className="font-serif font-bold text-slate-900">Contact Details</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Anjali Kurup"
+                    value={draft.customerName}
+                    onChange={(e) => updateDraft({ customerName: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium text-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Mobile Phone (WhatsApp) *</label>
+                  <input
+                    type="tel"
+                    placeholder="+91 98470 XXXXX"
+                    value={draft.customerPhone}
+                    onChange={(e) => updateDraft({ customerPhone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium text-slate-900"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Email Address *</label>
+                  <input
+                    type="email"
+                    placeholder="anjali@example.com"
+                    value={draft.customerEmail}
+                    onChange={(e) => updateDraft({ customerEmail: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium text-slate-900"
+                  />
+                </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Mobile Phone (WhatsApp) *</label>
-                <input
-                  type="tel"
-                  placeholder="+91 98470 XXXXX"
-                  value={draft.customerPhone}
-                  onChange={(e) => updateDraft({ customerPhone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Email Address *</label>
-                <input
-                  type="email"
-                  placeholder="anjali@example.com"
-                  value={draft.customerEmail}
-                  onChange={(e) => updateDraft({ customerEmail: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium"
-                />
-              </div>
-
-              {draft.fulfillment === 'delivery' && (
-                <>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Complete Address *</label>
-                    <textarea
-                      rows={2}
-                      placeholder="House No, Apartment, Street Name..."
-                      value={draft.customerAddress}
-                      onChange={(e) => updateDraft({ customerAddress: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Landmark</label>
-                    <input
-                      type="text"
-                      placeholder="Near Temple / Metro Station"
-                      value={draft.customerLandmark}
-                      onChange={(e) => updateDraft({ customerLandmark: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-leaf focus:ring-2 focus:ring-leaf/20 outline-none text-sm font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Kerala PIN Code *</label>
-                    <input
-                      type="text"
-                      placeholder="682031"
-                      value={draft.customerPincode}
-                      onChange={(e) => updateDraft({ customerPincode: e.target.value })}
-                      className={`w-full px-4 py-3 rounded-xl border outline-none text-sm font-medium ${
-                        draft.customerPincode && !isValidKeralaPincode(draft.customerPincode)
-                          ? 'border-red-500 bg-red-50 text-red-900'
-                          : 'border-slate-300 focus:border-leaf'
-                      }`}
-                    />
-                    {draft.customerPincode && !isValidKeralaPincode(draft.customerPincode) && (
-                      <p className="text-[11px] text-red-600 mt-1">Please enter a valid 6-digit Kerala PIN code (starts with 67, 68, or 69)</p>
-                    )}
-                  </div>
-                </>
-              )}
             </div>
+
+            {/* 3. SAVED ADDRESSES FOR GOOGLE AUTHENTICATED CUSTOMERS (Section 18 Requirement) */}
+            {authUser && savedAddresses.length > 0 && draft.fulfillment === 'delivery' && (
+              <SavedAddressesManager
+                savedAddresses={savedAddresses}
+                onSelectAddress={selectSavedAddress}
+                onAddNewAddress={addSavedAddress}
+              />
+            )}
+
+            {/* 4. DUAL LOCATION CAPTURE SYSTEM (GPS + MANUAL ADDRESS + LANDMARK + CONFIRMATION UI - Section 4,5,6,7) */}
+            {draft.fulfillment === 'delivery' && (
+              <LocationSelector
+                address={draft.customerAddress}
+                landmark={draft.customerLandmark}
+                pincode={draft.customerPincode}
+                deliveryInstructions={draft.deliveryInstructions}
+                latitude={draft.latitude}
+                longitude={draft.longitude}
+                locationAccuracy={draft.locationAccuracy}
+                onUpdateLocation={(locData) => {
+                  updateDraft({
+                    customerAddress: locData.address,
+                    customerLandmark: locData.landmark,
+                    customerPincode: locData.pincode,
+                    deliveryInstructions: locData.deliveryInstructions,
+                    latitude: locData.latitude,
+                    longitude: locData.longitude,
+                    locationAccuracy: locData.locationAccuracy,
+                  });
+                }}
+              />
+            )}
 
             <div className="flex justify-between pt-4 border-t border-slate-100">
               <button
@@ -602,16 +627,15 @@ export default function BookingWizard() {
 
         {/* STEP 6: Coupon & Summary */}
         {currentStep === 6 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 6 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 6 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
                 Apply Promo Coupons
               </h2>
               <p className="text-sm text-slate-600">Save on your festival feast with exclusive Onam discount codes.</p>
             </div>
 
-            {/* Coupon Box */}
             <div className="p-4 bg-coconut-100 rounded-2xl border border-gold/40 space-y-3">
               <label className="block text-xs font-bold uppercase text-slate-800">Enter Promo Code</label>
               <div className="flex gap-2">
@@ -620,7 +644,7 @@ export default function BookingWizard() {
                   placeholder="ONAM2026"
                   value={draft.couponCode}
                   onChange={(e) => updateDraft({ couponCode: e.target.value.toUpperCase() })}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 uppercase font-mono font-bold text-sm outline-none focus:border-gold"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 uppercase font-mono font-bold text-sm outline-none focus:border-gold text-slate-900"
                 />
                 <button
                   onClick={() => handleApplyCoupon(draft.couponCode)}
@@ -633,7 +657,6 @@ export default function BookingWizard() {
               {couponError && <p className="text-xs text-red-600 font-medium">{couponError}</p>}
               {couponSuccess && <p className="text-xs text-emerald-700 font-semibold">{couponSuccess}</p>}
 
-              {/* Sample Coupons Badges */}
               <div className="pt-2 flex flex-wrap gap-2">
                 {VALID_COUPONS.map((c) => (
                   <button
@@ -648,7 +671,6 @@ export default function BookingWizard() {
               </div>
             </div>
 
-            {/* Price Summary Breakdown */}
             <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2 text-sm">
               <div className="flex justify-between text-slate-600">
                 <span>Sadya Base Total ({draft.adultsCount} Adult, {draft.childrenCount} Child):</span>
@@ -699,9 +721,9 @@ export default function BookingWizard() {
 
         {/* STEP 7: Payment Options */}
         {currentStep === 7 && (
-          <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="space-y-6 animate-fade-up">
             <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 7 of 7</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-maroon">Step 7 of 8</span>
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-leaf-dark">
                 Choose Payment Method
               </h2>
@@ -795,9 +817,9 @@ export default function BookingWizard() {
           </div>
         )}
 
-        {/* STEP 8: Confirmation Screen */}
+        {/* STEP 8: Confirmation Screen & Guest -> Google Conversion */}
         {currentStep === 8 && confirmedBooking && (
-          <div className="space-y-6 text-center animate-in zoom-in-95 duration-500 py-4">
+          <div className="space-y-6 text-center animate-fade-up py-4">
             <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-lg border-2 border-emerald-400">
               <CheckCircle2 className="w-12 h-12" />
             </div>
@@ -828,6 +850,7 @@ export default function BookingWizard() {
 
               {/* Dynamic QR Code */}
               <div className="flex flex-col items-center py-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={confirmedBooking.qrCodeUrl}
                   alt="Order Verification QR Code"
@@ -835,6 +858,21 @@ export default function BookingWizard() {
                 />
                 <span className="text-[11px] text-slate-500 mt-2 font-medium">Show QR Code at pickup / delivery for fast verification</span>
               </div>
+
+              {/* DELIVERY OTP VERIFICATION CODE DISPLAY (Section 15 Requirement) */}
+              {confirmedBooking.fulfillment === 'delivery' && confirmedBooking.deliveryOtp && (
+                <div className="bg-emerald-50 border border-emerald-300 p-3 rounded-2xl text-center space-y-0.5">
+                  <div className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">
+                    Delivery Verification OTP
+                  </div>
+                  <div className="font-mono text-2xl font-extrabold text-emerald-700 tracking-widest">
+                    {confirmedBooking.deliveryOtp}
+                  </div>
+                  <div className="text-[10px] text-emerald-600 font-medium">
+                    Provide this code to delivery executive upon arrival
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1.5 text-xs text-slate-700 border-t border-gold/20 pt-3">
                 <div className="flex justify-between">
@@ -851,6 +889,44 @@ export default function BookingWizard() {
                 </div>
               </div>
             </div>
+
+            {/* GUEST -> GOOGLE ACCOUNT CONVERSION PROMPT (Section 17 Requirement) */}
+            {confirmedBooking.isGuest && (
+              <div className="max-w-md mx-auto bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-3xl border border-amber-200/80 shadow-sm text-center space-y-3">
+                <div className="flex items-center justify-center gap-1.5 text-amber-900 font-serif font-bold text-base">
+                  <ShieldCheck className="w-5 h-5 text-amber-600" />
+                  <span>Want to save your orders and addresses?</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Connect your Google account to track order history, save delivery locations & reorder with one tap.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleGuestAccountConversion}
+                  className="w-full bg-white hover:bg-slate-50 text-slate-800 font-semibold py-2.5 px-4 rounded-2xl border border-slate-300 shadow-sm flex items-center justify-center gap-2 text-xs transition"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.39 7.34 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.99 0 12s.45 3.85 1.24 5.42l4.04-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.61 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">

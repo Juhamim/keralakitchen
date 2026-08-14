@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Calendar, ShoppingBag, Menu as MenuIcon, X, ShieldCheck, Utensils, Lock } from 'lucide-react';
-import { NilavilakkuLamp } from '@/components/landing/KeralaDecorations';
-import { FlowerIconSvg, FestivalFireIcon } from '@/components/common/SvgIcons';
+import Image from 'next/image';
+import { Home, Calendar, ShoppingBag, Menu as MenuIcon, X, Utensils, Truck, Images, Star, PhoneCall, MapPin, LogIn, LayoutDashboard, ShieldCheck, ChevronDown } from 'lucide-react';
+import { FestivalFireIcon } from '@/components/common/SvgIcons';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -18,21 +20,24 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/menu', label: 'Sadya Menu' },
-    { href: '/book', label: 'Book Sadya', highlight: true },
-    { href: '/track', label: 'Track Order' },
-    { href: '/gallery', label: 'Gallery' },
-    { href: '/reviews', label: 'Reviews' },
-    { href: '/contact', label: 'Contact' },
+    { href: '/', label: 'Home', icon: Home },
+    { href: '/menu', label: 'Sadya Menu', icon: Utensils },
+    { href: '/track', label: 'Track Order', icon: Truck },
+    { href: '/gallery', label: 'Gallery', icon: Images },
+    { href: '/reviews', label: 'Reviews', icon: Star },
+    { href: '/contact', label: 'Contact', icon: PhoneCall },
   ];
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-[400ms] ${
         isScrolled
-          ? 'bg-coconut-50/95 backdrop-blur-xl shadow-lg border-b border-gold/20 py-2.5'
+          ? 'bg-coconut-50/95 backdrop-blur-xl shadow-lg border-b border-gold/20 py-2'
           : 'bg-gradient-to-b from-coconut-50/80 to-transparent py-4'
       }`}
     >
@@ -40,62 +45,90 @@ export default function Navbar() {
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-leaf via-gold to-maroon" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo with Nilavilakku */}
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-leaf to-leaf-dark flex items-center justify-center shadow-glow-green group-hover:scale-105 transition-transform p-2">
-                <NilavilakkuLamp className="w-full h-full text-white" />
-              </div>
-              {/* Tiny flower accent */}
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gold flex items-center justify-center animate-pulse shadow-sm">
-                <FlowerIconSvg className="w-2.5 h-2.5 text-slate-900" />
-              </div>
+        <div className="flex items-center justify-between gap-3">
+          {/* Logo from Poster */}
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
+            <div className="relative h-11 w-44 sm:h-14 sm:w-52 overflow-hidden rounded-xl bg-leaf-dark/90 p-1 border border-gold/40 shadow-md group-hover:scale-105 transition-transform flex items-center justify-center">
+              <Image
+                src="/kerala-kitchen-logo-transparent.png"
+                alt="കേരള കിച്ചൺ വലിയപറമ്പ്"
+                fill
+                sizes="(min-width: 640px) 208px, 176px"
+                className="object-contain p-1"
+                priority
+              />
             </div>
-            <div>
-              <span className="font-serif text-xl sm:text-2xl font-black tracking-tight text-leaf-dark block leading-none">
-                Kerala<span className="text-gold font-normal italic ml-0.5">Kitchen</span>
+            <div className="hidden xl:block">
+              <span className="text-[10px] tracking-[0.15em] text-maroon font-extrabold uppercase flex items-center gap-1">
+                <FestivalFireIcon className="w-3 h-3 text-gold-deep" />
+                <span>ഓഗസ്റ്റ് 25, 26, 27</span>
               </span>
-              <span className="text-[9px] tracking-[0.2em] text-maroon font-bold uppercase flex items-center gap-1 mt-0.5">
-                <FestivalFireIcon className="w-2.5 h-2.5" />
-                <span>Onam Sadya 2026</span>
+              <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1 mt-0.5">
+                <MapPin className="w-2.5 h-2.5 text-gold" />
+                Valiyaparamba, Kerala
               </span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                    link.highlight
-                      ? 'bg-gradient-to-r from-leaf to-leaf-dark text-white hover:shadow-glow-green px-5 flex items-center gap-1.5'
-                      : isActive
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`px-3.5 py-2 rounded-full text-sm font-semibold transition-all duration-200 relative ${
+                    isActive
                       ? 'text-leaf-dark font-bold bg-coconut-200 border border-gold/30 shadow-inner-gold'
                       : 'text-slate-700 hover:text-leaf-dark hover:bg-coconut-100/80'
                   }`}
                 >
-                  {link.highlight && <Calendar className="w-4 h-4 text-gold-light" />}
                   {link.label}
+                  {isActive && (
+                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-gold" />
+                  )}
                 </Link>
               );
             })}
           </nav>
 
           {/* Right CTA */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              href="/admin"
-              className="text-xs text-slate-500 hover:text-leaf flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-2 rounded-full hover:border-gold/40 transition-colors font-medium"
-              title="Admin Portal"
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
+            <a
+              href="tel:09447445078"
+              className="text-xs font-bold text-slate-600 hover:text-leaf flex items-center gap-1.5 bg-white/80 border border-slate-200 px-3.5 py-2 rounded-full hover:border-gold/50 transition-colors"
+              title="Call us now"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-gold" />
-              Admin
-            </Link>
+              <PhoneCall className="w-3.5 h-3.5 text-gold" />
+              <span className="hidden xl:inline">0944 744 5078</span>
+            </a>
+
+            {isAuthenticated && user ? (
+              <Link
+                href={user.role === 'admin' ? '/admin' : user.role === 'staff' ? '/staff' : '/dashboard'}
+                className="flex items-center gap-2 bg-white border border-leaf/30 hover:border-leaf text-leaf-dark text-xs font-bold px-3.5 py-2 rounded-full transition-colors"
+                title={`Go to ${user.role} dashboard`}
+              >
+                {user.role === 'admin' ? (
+                  <ShieldCheck className="w-4 h-4 text-gold-deep" />
+                ) : (
+                  <LayoutDashboard className="w-4 h-4 text-leaf" />
+                )}
+                <span>{user.name}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="text-xs font-bold text-maroon hover:bg-maroon-soft flex items-center gap-1.5 bg-white/80 border border-maroon/30 px-4 py-2 rounded-full hover:border-maroon transition-colors"
+                title="Login to Admin / Staff panel"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Login</span>
+              </Link>
+            )}
 
             <Link
               href="/book"
@@ -110,7 +143,8 @@ export default function Navbar() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden p-2.5 rounded-2xl text-leaf-dark bg-coconut-100 border border-gold/25 hover:bg-coconut-200 transition-colors"
-            aria-label="Toggle menu"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
           </button>
@@ -119,39 +153,68 @@ export default function Navbar() {
 
       {/* Mobile Slideout Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-coconut-50/98 backdrop-blur-xl border-b border-gold/30 shadow-2xl px-4 pt-3 pb-6 space-y-2 mt-2">
+        <div className="lg:hidden bg-coconut-50/[0.98] backdrop-blur-xl border-b border-gold/30 shadow-2xl px-4 pt-3 pb-6 mt-2 max-h-[calc(100dvh-5rem)] overflow-y-auto">
           {/* Festival ribbon at top */}
           <div className="h-[2px] bg-gradient-to-r from-leaf via-gold to-maroon rounded-full mb-3" />
-          
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`block px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${
-                pathname === link.href
-                  ? 'bg-gradient-to-r from-leaf to-leaf-dark text-white shadow-md'
-                  : 'text-slate-800 hover:bg-coconut-200'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+
+          <nav className="space-y-1.5" aria-label="Mobile navigation">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-semibold transition-colors ${
+                    isActive
+                      ? 'bg-gradient-to-r from-leaf to-leaf-dark text-white shadow-md'
+                      : 'text-slate-800 hover:bg-coconut-200'
+                  }`}
+                >
+                  <span
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      isActive ? 'bg-white/15 text-gold' : 'bg-coconut-100 text-leaf'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+
           <div className="pt-3 border-t border-gold/20 flex flex-col gap-2.5">
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-1.5"
+            {isAuthenticated && user ? (
+              <Link
+                href={user.role === 'admin' ? '/admin' : user.role === 'staff' ? '/staff' : '/dashboard'}
+                className="w-full text-center py-3 text-sm font-bold text-leaf-dark bg-white border border-leaf/30 rounded-2xl flex items-center justify-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4 text-leaf" />
+                My Dashboard ({user.name})
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="w-full text-center py-3 text-sm font-bold text-maroon bg-white border border-maroon/30 rounded-2xl flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4 text-maroon" />
+                Admin / Staff Login
+              </Link>
+            )}
+            <a
+              href="tel:09447445078"
+              className="w-full text-center py-3 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-2xl flex items-center justify-center gap-2"
             >
-              <Lock className="w-3.5 h-3.5 text-gold" />
-              Admin & Staff Portal
-            </Link>
+              <PhoneCall className="w-4 h-4 text-gold" />
+              Call 0944 744 5078
+            </a>
             <Link
               href="/book"
-              onClick={() => setMobileMenuOpen(false)}
               className="w-full text-center py-3.5 text-sm font-extrabold text-slate-900 bg-gradient-to-r from-gold via-gold-warm to-gold rounded-2xl shadow-gold flex items-center justify-center gap-2"
             >
-              <ShoppingBag className="w-4 h-4 text-slate-900" />
+              <Calendar className="w-4 h-4 text-slate-900" />
               Pre-Book Onam Sadya Now
             </Link>
           </div>

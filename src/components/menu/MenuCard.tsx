@@ -17,7 +17,7 @@ export default function MenuCard({ item, onSelect }: MenuCardProps) {
   const [showItems, setShowItems] = useState(false);
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden border border-gold/30 shadow-soft hover:shadow-card-lg hover:-translate-y-2 transition-all duration-400 flex flex-col justify-between group relative">
+    <div className="bg-white rounded-3xl overflow-hidden border border-gold/30 shadow-soft hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between group relative">
       {/* Card Image Header */}
       <div>
         <div className="relative aspect-[16/10] overflow-hidden bg-coconut-200">
@@ -25,6 +25,7 @@ export default function MenuCard({ item, onSelect }: MenuCardProps) {
             src={item.imageUrl}
             alt={item.name}
             fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
             className="object-cover group-hover:scale-110 transition-transform duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />

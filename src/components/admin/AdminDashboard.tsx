@@ -11,20 +11,20 @@ import {
   ShoppingBag,
   Clock,
   CheckCircle2,
-  AlertCircle,
   Download,
-  Plus,
   Search,
   Filter,
   ShieldCheck,
   Tag,
   Utensils,
-  Calendar,
-  Users
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AdminDashboard() {
-  const { bookings, updateOrderStatus } = useBookingStore();
+  const { user, logout } = useAuth();
+  const { bookings, updateOrderStatus, isLoaded } = useBookingStore();
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'slots' | 'coupons'>('orders');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,11 +45,19 @@ export default function AdminDashboard() {
   });
 
   const exportCSV = () => {
+    const escapeCSV = (value: string | number) => {
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
     const headers = 'Booking ID,Date,Time Slot,Fulfillment,Customer Name,Phone,Total Amount,Order Status\n';
     const rows = bookings
       .map(
         (b) =>
-          `"${b.bookingNumber}","${b.date}","${b.timeSlot}","${b.fulfillment}","${b.customer.name}","${b.customer.phone}",${b.totalAmount},"${b.orderStatus}"`
+          `${escapeCSV(b.bookingNumber)},${escapeCSV(b.date)},${escapeCSV(b.timeSlot)},${escapeCSV(b.fulfillment)},${escapeCSV(b.customer.name)},${escapeCSV(b.customer.phone)},${b.totalAmount},${escapeCSV(b.orderStatus)}`
       )
       .join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv' });
@@ -58,6 +66,7 @@ export default function AdminDashboard() {
     a.href = url;
     a.download = `KeralaKitchen_Onam_Report_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const statusOptions: OrderStatus[] = [
@@ -69,6 +78,15 @@ export default function AdminDashboard() {
     'Delivered',
     'Cancelled',
   ];
+
+  // Compute live slot occupancy from actual bookings (exclude cancelled)
+  const activeBookings = bookings.filter((b) => b.orderStatus !== 'Cancelled');
+  const liveSlots = AVAILABLE_SLOTS.map((slot) => {
+    const bookedCount = activeBookings.filter(
+      (b) => b.timeSlot === slot.time
+    ).length;
+    return { ...slot, bookedCount };
+  });
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
@@ -85,12 +103,26 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex items-center gap-3">
+          {user && (
+            <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-slate-600 bg-coconut-100 border border-gold/30 px-3.5 py-2 rounded-full">
+              <User className="w-3.5 h-3.5 text-gold" />
+              <span>{user.name}</span>
+            </div>
+          )}
           <button
             onClick={exportCSV}
             className="bg-leaf hover:bg-leaf-dark text-white font-bold text-xs px-4 py-2.5 rounded-full shadow-sm flex items-center gap-2"
           >
             <Download className="w-4 h-4 text-gold-light" />
             <span>Export Sales CSV</span>
+          </button>
+          <button
+            onClick={logout}
+            className="bg-white hover:bg-maroon-soft text-maroon font-bold text-xs px-4 py-2.5 rounded-full border border-maroon/30 shadow-sm flex items-center gap-2 transition-colors"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Logout</span>
           </button>
         </div>
       </div>
@@ -102,7 +134,7 @@ export default function AdminDashboard() {
             <span className="text-xs font-bold uppercase">Total Revenue</span>
             <TrendingUp className="w-5 h-5 text-emerald-600" />
           </div>
-          <div className="font-serif text-2xl font-extrabold text-leaf-dark">{formatINR(totalRevenue)}</div>
+          <div className="font-serif text-2xl font-extrabold text-leaf-dark">{isLoaded ? formatINR(totalRevenue) : '...'}</div>
           <span className="text-[11px] text-slate-500 mt-1 block">Live festival bookings total</span>
         </div>
 
@@ -111,7 +143,7 @@ export default function AdminDashboard() {
             <span className="text-xs font-bold uppercase">Total Bookings</span>
             <ShoppingBag className="w-5 h-5 text-gold-deep" />
           </div>
-          <div className="font-serif text-2xl font-extrabold text-slate-900">{totalBookingsCount}</div>
+          <div className="font-serif text-2xl font-extrabold text-slate-900">{isLoaded ? totalBookingsCount : '...'}</div>
           <span className="text-[11px] text-slate-500 mt-1 block">Orders placed for Onam</span>
         </div>
 
@@ -120,7 +152,7 @@ export default function AdminDashboard() {
             <span className="text-xs font-bold uppercase">Active Kitchen Queue</span>
             <Clock className="w-5 h-5 text-amber-600" />
           </div>
-          <div className="font-serif text-2xl font-extrabold text-amber-600">{pendingOrdersCount}</div>
+          <div className="font-serif text-2xl font-extrabold text-amber-600">{isLoaded ? pendingOrdersCount : '...'}</div>
           <span className="text-[11px] text-slate-500 mt-1 block">Confirmed / Preparing</span>
         </div>
 
@@ -129,13 +161,13 @@ export default function AdminDashboard() {
             <span className="text-xs font-bold uppercase">Completed</span>
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
-          <div className="font-serif text-2xl font-extrabold text-emerald-700">{completedOrdersCount}</div>
+          <div className="font-serif text-2xl font-extrabold text-emerald-700">{isLoaded ? completedOrdersCount : '...'}</div>
           <span className="text-[11px] text-slate-500 mt-1 block">Successfully fulfilled</span>
         </div>
       </div>
 
       {/* Tabs Bar */}
-      <div className="flex border-b border-slate-200 gap-4">
+      <div className="flex flex-wrap border-b border-slate-200 gap-x-4 gap-y-2">
         {[
           { id: 'orders', label: 'All Orders', icon: ShoppingBag },
           { id: 'menu', label: 'Menu & Prices', icon: Utensils },
@@ -171,6 +203,7 @@ export default function AdminDashboard() {
               <input
                 type="text"
                 placeholder="Search by ID, Name or Phone..."
+                aria-label="Search orders by ID, name or phone"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-full border border-slate-300 text-xs font-medium outline-none focus:border-leaf"
@@ -181,6 +214,7 @@ export default function AdminDashboard() {
               <Filter className="w-4 h-4 text-slate-400" />
               <select
                 value={filterStatus}
+                aria-label="Filter orders by status"
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="px-3 py-2 rounded-full border border-slate-300 text-xs font-semibold text-slate-700 bg-white outline-none"
               >
@@ -210,6 +244,21 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                {filteredBookings.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="p-10 text-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-400">
+                        <Search className="w-8 h-8" />
+                        <p className="font-serif font-bold text-slate-500">No orders found</p>
+                        <p className="text-[11px] text-slate-400">
+                          {searchTerm || filterStatus !== 'all'
+                            ? 'Try adjusting your search or filter.'
+                            : 'Bookings will appear here once customers place orders.'}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
                 {filteredBookings.map((b) => (
                   <tr key={b.id} className="hover:bg-coconut-50/50 transition-colors">
                     <td className="p-3 font-mono font-bold text-leaf-dark">{b.bookingNumber}</td>
@@ -234,6 +283,7 @@ export default function AdminDashboard() {
                     <td className="p-3">
                       <select
                         value={b.orderStatus}
+                        aria-label={`Order status for ${b.bookingNumber}`}
                         onChange={(e) => updateOrderStatus(b.id, e.target.value as OrderStatus)}
                         className="px-2.5 py-1 rounded-xl text-xs font-bold border border-slate-300 bg-white text-slate-800 outline-none"
                       >
@@ -289,12 +339,18 @@ export default function AdminDashboard() {
       {/* TAB 3: TIME SLOTS */}
       {activeTab === 'slots' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {AVAILABLE_SLOTS.map((slot) => (
+          {liveSlots.map((slot) => (
             <div key={slot.time} className="p-5 bg-white rounded-3xl border border-gold/30 shadow-soft space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-serif font-bold text-lg text-slate-900">{slot.time}</span>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
-                  Active
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    slot.bookedCount >= slot.maxOrders
+                      ? 'bg-maroon-soft text-maroon'
+                      : 'bg-emerald-100 text-emerald-800'
+                  }`}
+                >
+                  {slot.bookedCount >= slot.maxOrders ? 'Full' : 'Active'}
                 </span>
               </div>
               <div className="text-xs text-slate-600">
@@ -302,8 +358,10 @@ export default function AdminDashboard() {
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                 <div
-                  className="bg-gold h-full"
-                  style={{ width: `${(slot.bookedCount / slot.maxOrders) * 100}%` }}
+                  className={`h-full ${
+                    slot.bookedCount >= slot.maxOrders ? 'bg-maroon' : 'bg-gold'
+                  }`}
+                  style={{ width: `${Math.min(100, (slot.bookedCount / slot.maxOrders) * 100)}%` }}
                 />
               </div>
             </div>

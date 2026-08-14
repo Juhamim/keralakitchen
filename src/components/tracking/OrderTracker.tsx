@@ -1,25 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
 import { formatINR, formatDate } from '@/lib/utils';
 import { generateInvoicePDF } from '@/lib/pdf';
 import { Booking, ExtraItem } from '@/types';
-import { Search, CheckCircle2, Download, AlertCircle } from 'lucide-react';
+import { Search, CheckCircle2, Download, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function OrderTracker() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id') || '';
 
-  const { bookings } = useBookingStore();
+  const { bookings, isLoaded } = useBookingStore();
   const [searchQuery, setSearchQuery] = useState(initialId);
-  const [activeOrder, setActiveOrder] = useState<Booking | null>(() => {
+  const [activeOrder, setActiveOrder] = useState<Booking | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded) return;
     if (initialId) {
-      return bookings.find(b => b.bookingNumber.toUpperCase() === initialId.toUpperCase() || b.customer.phone.includes(initialId)) || null;
+      const found = bookings.find(
+        (b) =>
+          b.bookingNumber.toUpperCase() === initialId.toUpperCase() ||
+          b.customer.phone.includes(initialId)
+      );
+      setActiveOrder(found || null);
+    } else {
+      setActiveOrder(bookings[0] || null);
     }
-    return bookings[0] || null;
-  });
+  }, [isLoaded, initialId, bookings]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,10 +55,20 @@ export default function OrderTracker() {
     const currentIndex = statusOrder.indexOf(currentStatus);
     const stepIndex = statusOrder.indexOf(stepKey);
 
+    if (currentStatus === 'Cancelled' || currentIndex === -1) return 'upcoming';
     if (stepIndex <= currentIndex) return 'completed';
     if (stepIndex === currentIndex + 1) return 'active';
     return 'upcoming';
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 text-center space-y-4">
+        <Loader2 className="w-8 h-8 text-gold animate-spin mx-auto" />
+        <p className="text-xs font-semibold text-slate-500">Loading booking records...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6">
@@ -85,7 +104,7 @@ export default function OrderTracker() {
       </div>
 
       {activeOrder ? (
-        <div className="bg-white border border-gold/30 rounded-3xl p-6 sm:p-8 shadow-card space-y-8 animate-in fade-in duration-300">
+        <div className="bg-white border border-gold/30 rounded-3xl p-6 sm:p-8 shadow-card space-y-8 animate-fade-up">
           {/* Top Banner Meta */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
             <div>
@@ -111,6 +130,12 @@ export default function OrderTracker() {
           {/* Animated Timeline */}
           <div className="py-4">
             <h3 className="font-serif text-lg font-bold text-leaf-dark mb-6">Fulfillment Progress</h3>
+            {activeOrder.orderStatus === 'Cancelled' && (
+              <div className="mb-6 flex items-center gap-2.5 bg-maroon-soft border border-maroon/30 text-maroon-dark rounded-2xl p-4 text-sm font-semibold">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>This booking was cancelled. No further fulfillment is scheduled for this order.</span>
+              </div>
+            )}
             <div className="relative pl-6 sm:pl-8 border-l-2 border-gold/30 space-y-8">
               {timelineSteps.map((step, idx) => {
                 const status = getStepStatus(step.key, activeOrder.orderStatus);

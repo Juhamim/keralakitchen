@@ -44,18 +44,18 @@ export default function ContactPage() {
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                  <span className="text-slate-700">Kerala Kitchen, MG Road, Near High Court Junction, Marine Drive, Ernakulam, Kochi – 682031</span>
+                  <span className="text-slate-700 font-medium">KERALA KITCHEN, Valiyaparamba, Kerala</span>
                 </li>
-                <li className="flex items-center gap-3">
-                  <Phone className="w-5 h-5 text-gold shrink-0" />
-                  <div>
-                    <a href="tel:+919847012345" className="text-leaf font-bold hover:underline">+91 98470 12345</a>
-                    <span className="text-[10px] text-slate-500 block">WhatsApp Available</span>
+                <li className="flex items-start gap-3">
+                  <Phone className="w-5 h-5 text-gold shrink-0 mt-1" />
+                  <div className="space-y-1">
+                    <a href="tel:9447445078" className="text-leaf font-bold hover:underline text-base block">📞 9447 44 50 78</a>
+                    <a href="tel:9745627203" className="text-leaf font-bold hover:underline text-base block">📞 9745 62 72 03</a>
+                    <span className="text-[10px] text-slate-500 block pt-0.5">Official Booking & Inquiries</span>
                   </div>
                 </li>
-                <li className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-gold shrink-0" />
-                  <a href="mailto:orders@keralakitchenonam.com" className="text-leaf hover:underline text-sm font-medium">orders@keralakitchenonam.com</a>
+                <li className="flex items-center gap-3 text-xs font-semibold text-slate-700 bg-coconut-100 p-2.5 rounded-xl border border-gold/20">
+                  <span>🍛 All-you-can-eat • 🌿 Outdoor seating • 🍽️ Dine-in</span>
                 </li>
               </ul>
             </div>
@@ -66,20 +66,20 @@ export default function ContactPage() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-deep to-gold flex items-center justify-center text-white shadow-md">
                   <Clock className="w-5 h-5" />
                 </div>
-                <h3 className="font-serif text-lg font-bold text-leaf-dark">Festival Hours</h3>
+                <h3 className="font-serif text-lg font-bold text-leaf-dark">Opening Status</h3>
               </div>
               <div className="text-sm space-y-2">
-                <div className="flex justify-between px-3 py-2 bg-white/60 rounded-xl">
-                  <span className="text-slate-600">Onam Days (Sep 2–6)</span>
-                  <strong className="text-leaf-dark">10 AM – 3 PM</strong>
+                <div className="flex justify-between px-3 py-2 bg-white/70 rounded-xl">
+                  <span className="text-slate-600 font-medium">Daily Status</span>
+                  <strong className="text-emerald-700 uppercase font-extrabold">OPEN</strong>
                 </div>
-                <div className="flex justify-between px-3 py-2 bg-white/60 rounded-xl">
-                  <span className="text-slate-600">Regular Days</span>
-                  <strong className="text-leaf-dark">11 AM – 9 PM</strong>
+                <div className="flex justify-between px-3 py-2 bg-white/70 rounded-xl">
+                  <span className="text-slate-600 font-medium">Closing Time</span>
+                  <strong className="text-leaf-dark">Around 9:00 PM</strong>
                 </div>
-                <div className="flex justify-between px-3 py-2 bg-white/60 rounded-xl">
-                  <span className="text-slate-600">Bulk Order Enquiry</span>
-                  <strong className="text-leaf-dark">9 AM – 6 PM</strong>
+                <div className="flex justify-between px-3 py-2 bg-white/70 rounded-xl">
+                  <span className="text-slate-600 font-medium">Thiruvonam 2026</span>
+                  <strong className="text-maroon font-bold">Aug 26, 2026</strong>
                 </div>
               </div>
             </div>

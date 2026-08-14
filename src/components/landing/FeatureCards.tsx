@@ -83,7 +83,7 @@ export default function FeatureCards() {
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className={`bg-white rounded-3xl p-6 sm:p-7 border ${feature.border} shadow-soft hover:shadow-card-lg hover:-translate-y-2 transition-all duration-400 relative group overflow-hidden`}
+              className={`bg-white rounded-3xl p-6 sm:p-7 border ${feature.border} shadow-soft hover:shadow-card-lg hover:-translate-y-2 transition-all duration-300 relative group overflow-hidden`}
             >
               {/* Subtle gradient background on hover */}
               <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl`} />

@@ -297,3 +297,12 @@ h1, h2, h3, h4, .font-serif {
   background: rgba(212, 175, 55, 0.3);
   color: #1B5E20;
 }
+
+/* Hide scrollbars but keep scrolling (used in wizard stepper, mobile menus) */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

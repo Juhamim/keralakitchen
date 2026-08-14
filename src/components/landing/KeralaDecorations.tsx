@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 
 /* ================================================
    Kerala Cultural SVG Decorations & Dividers
@@ -140,6 +141,93 @@ export function KasavuStrip({ className = '' }: { className?: string }) {
     <div className={`w-full ${className}`} aria-hidden="true">
       <div className="h-[3px] bg-gradient-to-r from-transparent via-gold to-transparent" />
       <div className="h-[1px] mt-[2px] bg-gradient-to-r from-transparent via-gold-deep/50 to-transparent" />
+    </div>
+  );
+}
+
+/* ---- King Maveli (Mahabali) Cultural SVG Illustration ---- */
+export function KingMaveliIllustration({ className = '' }: { className?: string }) {
+  return (
+    <div className={`relative inline-flex flex-col items-center ${className}`} aria-label="King Mahabali Illustration">
+      {/* Outer ambient glow ring */}
+      <div className="absolute inset-0 rounded-full" style={{
+        background: 'radial-gradient(ellipse at 50% 60%, rgba(212,175,55,0.45) 0%, rgba(212,175,55,0.18) 45%, transparent 75%)',
+        filter: 'blur(18px)',
+        transform: 'scale(1.15)',
+        zIndex: 0,
+      }} />
+
+      {/* Animated rotating halo ring */}
+      <div className="absolute" style={{
+        top: '4%', left: '5%', right: '5%', bottom: '10%',
+        borderRadius: '50%',
+        border: '2px solid rgba(212,175,55,0.35)',
+        boxShadow: '0 0 24px 4px rgba(212,175,55,0.25), inset 0 0 16px 2px rgba(212,175,55,0.1)',
+        animation: 'spin 18s linear infinite',
+        zIndex: 1,
+      }} />
+
+      {/* Second thinner ring */}
+      <div className="absolute" style={{
+        top: '2%', left: '2%', right: '2%', bottom: '8%',
+        borderRadius: '50%',
+        border: '1px dashed rgba(212,175,55,0.25)',
+        animation: 'spin 30s linear infinite reverse',
+        zIndex: 1,
+      }} />
+
+      {/* Main 3D image container */}
+      <div className="relative z-10" style={{
+        filter: 'drop-shadow(0 12px 40px rgba(212,175,55,0.55)) drop-shadow(0 4px 16px rgba(139,0,0,0.25))',
+      }}>
+        <Image
+          src="/maveli-3d.png"
+          alt="King Mahabali — the legendary benevolent ruler of Kerala, depicted in royal attire with golden crown, jewels and Kasavu dhoti"
+          width={260}
+          height={320}
+          className="object-contain"
+          priority
+          style={{
+            filter: 'contrast(1.06) saturate(1.12) brightness(1.04)',
+            maxHeight: '320px',
+            width: 'auto',
+          }}
+        />
+      </div>
+
+      {/* Corner jewel decorations */}
+      <div className="absolute top-4 left-6 w-3 h-3 rounded-full z-20" style={{ background: 'radial-gradient(circle, #FFF176, #F9A825)', boxShadow: '0 0 8px 2px rgba(249,168,37,0.7)' }} />
+      <div className="absolute top-4 right-6 w-3 h-3 rounded-full z-20" style={{ background: 'radial-gradient(circle, #FF8A80, #B71C1C)', boxShadow: '0 0 8px 2px rgba(183,28,28,0.6)' }} />
+      <div className="absolute top-12 left-2 w-2 h-2 rounded-full z-20" style={{ background: 'radial-gradient(circle, #B9F6CA, #1B5E20)', boxShadow: '0 0 6px 1px rgba(27,94,32,0.6)' }} />
+      <div className="absolute top-12 right-2 w-2 h-2 rounded-full z-20" style={{ background: 'radial-gradient(circle, #B9F6CA, #1B5E20)', boxShadow: '0 0 6px 1px rgba(27,94,32,0.6)' }} />
+
+      {/* Cultural label badge */}
+      <div className="relative z-10 mt-2 px-4 py-1 rounded-full text-center" style={{
+        background: 'linear-gradient(90deg, rgba(212,175,55,0.15), rgba(212,175,55,0.3), rgba(212,175,55,0.15))',
+        border: '1px solid rgba(212,175,55,0.5)',
+        backdropFilter: 'blur(8px)',
+      }}>
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-800">👑 King Mahabali</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---- King Maveli Welcome Banner Component ---- */
+export function MaveliBannerBadge({ className = '' }: { className?: string }) {
+  return (
+    <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-gradient-to-r from-gold-soft via-white to-gold-soft border-2 border-gold/60 shadow-gold backdrop-blur-md ${className}`}>
+      <span className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center border border-gold shrink-0">
+        <span className="text-base">👑</span>
+      </span>
+      <div className="text-left">
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-maroon block leading-tight">
+          King Mahabali's Royal Welcome
+        </span>
+        <span className="text-xs sm:text-sm font-bold text-leaf-dark font-serif">
+          "മാവേലി നാടു വാണീടും കാലം..." Welcome to Onam 2026!
+        </span>
+      </div>
     </div>
   );
 }

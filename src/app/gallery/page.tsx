@@ -60,7 +60,7 @@ export default function GalleryPage() {
             <div
               key={i}
               onClick={() => setSelectedImg(img.url)}
-              className="group relative aspect-[4/3] rounded-3xl overflow-hidden cursor-pointer shadow-soft hover:shadow-card-lg border border-gold/25 hover:-translate-y-1 transition-all duration-400"
+              className="group relative aspect-[4/3] rounded-3xl overflow-hidden cursor-pointer shadow-soft hover:shadow-card-lg border border-gold/25 hover:-translate-y-1 transition-all duration-300"
             >
               <Image
                 src={img.url}

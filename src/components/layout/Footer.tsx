@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { MapPin, Phone, Mail, Clock, Heart } from 'lucide-react';
 import { KasavuStrip, PookalamMandala, NilavilakkuLamp, BananaLeafDivider } from '@/components/landing/KeralaDecorations';
 import { VegBadgeIcon, CertificateBadgeIcon, BananaLeafIcon, FlowerIconSvg, LeafIcon, FestivalFireIcon } from '@/components/common/SvgIcons';
@@ -23,21 +24,18 @@ export default function Footer() {
           {/* Brand Info */}
           <div className="space-y-5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-leaf to-leaf-dark flex items-center justify-center shadow-glow-green p-2">
-                <NilavilakkuLamp className="w-full h-full text-white" />
-              </div>
-              <div>
-                <span className="font-serif text-2xl font-black text-leaf-dark block leading-none">
-                  Kerala<span className="text-gold italic ml-0.5">Kitchen</span>
-                </span>
-                <span className="text-[9px] tracking-[0.15em] text-maroon font-bold uppercase flex items-center gap-1 mt-0.5">
-                  <FestivalFireIcon className="w-2.5 h-2.5" />
-                  Onam Sadya 2026
-                </span>
+              <div className="relative h-14 w-52 overflow-hidden rounded-xl bg-leaf-dark/95 p-1 border border-gold/40 shadow-md">
+                <Image
+                  src="/kerala-kitchen-logo-transparent.png"
+                  alt="കേരള കിച്ചൺ വലിയപറമ്പ്"
+                  fill
+                  sizes="208px"
+                  className="object-contain p-1"
+                />
               </div>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
-              Bringing authentic, traditional Kerala Onam Sadya with 26 hand-prepared vegetarian delicacies served on fresh banana leaves, right to your home & hotel counter.
+              Bringing authentic, traditional Kerala Onam Sadya with 23 hand-prepared delicacies served fresh on cut plantain banana leaves. Celebrate Onam with Kerala Kitchen Valiyaparambu!
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 bg-leaf-soft text-leaf-dark rounded-full border border-leaf/20">
@@ -60,8 +58,9 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {[
                 { href: '/', label: 'Home & Festival Highlights' },
-                { href: '/menu', label: 'Full 26-Item Sadya Menu' },
+                { href: '/menu', label: 'Full 23-Item Sadya Menu' },
                 { href: '/book', label: 'Online Sadya Pre-Booking', bold: true },
+                { href: '/dashboard', label: 'Customer Account & Addresses' },
                 { href: '/track', label: 'Track Your Sadya Order' },
                 { href: '/reviews', label: 'Customer Reviews & Photos' },
                 { href: '/gallery', label: 'Pookalam & Kitchen Gallery' },
@@ -81,24 +80,29 @@ export default function Footer() {
           {/* Contact Details */}
           <div>
             <h4 className="font-serif text-lg font-bold text-leaf-dark mb-5 flex items-center gap-2">
-              <LeafIcon className="w-4 h-4 text-gold" /> Hotel Address
+              <LeafIcon className="w-4 h-4 text-gold" /> Restaurant Details
             </h4>
             <ul className="space-y-3.5 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gold shrink-0 mt-0.5" />
-                <span>MG Road, Near High Court Junction, Marine Drive, Kochi, Kerala - 682031</span>
+                <span>KERALA KITCHEN, Valiyaparamba, Kerala</span>
               </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-gold shrink-0" />
-                <span className="font-semibold">+91 98470 12345</span>
+              <li className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 font-semibold text-leaf">
+                  <Phone className="w-4 h-4 text-gold shrink-0" />
+                  <span>Bookings & Inquiries:</span>
+                </div>
+                <div className="pl-6 space-y-0.5 font-bold text-slate-800 text-sm">
+                  <a href="tel:9447445078" className="hover:text-leaf hover:underline block">📞 9447 44 50 78</a>
+                  <a href="tel:9745627203" className="hover:text-leaf hover:underline block">📞 9745 62 72 03</a>
+                </div>
               </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-gold shrink-0" />
-                <span>orders@keralakitchenonam.com</span>
-              </li>
-              <li className="flex items-center gap-3 text-xs font-bold text-maroon bg-maroon-soft/60 px-3 py-2 rounded-xl border border-maroon/20">
+              <li className="flex items-center gap-3 text-xs font-bold text-slate-700">
                 <Clock className="w-4 h-4 shrink-0 text-maroon" />
-                <span>Onam Days: 10:00 AM – 3:00 PM</span>
+                <span>Open Daily • Closing Around 9:00 PM</span>
+              </li>
+              <li className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                <span>🍛 All-you-can-eat • 🌿 Outdoor seating</span>
               </li>
             </ul>
           </div>
@@ -109,30 +113,30 @@ export default function Footer() {
               <FestivalFireIcon className="w-4 h-4 text-gold" /> Onam Festival 2026
             </h4>
             <div className="space-y-2 text-xs">
-              <div className="p-3 rounded-xl bg-white/60 border border-gold/20 flex justify-between items-center">
+              <div className="p-2.5 rounded-xl bg-white/60 border border-gold/20 flex justify-between items-center">
                 <span>First Onam (Uthradam)</span>
-                <span className="font-bold text-leaf-dark">Sep 3</span>
+                <span className="font-bold text-leaf-dark">Aug 25, 2026</span>
               </div>
-              <div className="p-3 rounded-xl bg-gold-soft/70 border border-gold/40 flex justify-between items-center font-bold text-slate-800">
+              <div className="p-2.5 rounded-xl bg-gold-soft/80 border border-gold/50 flex justify-between items-center font-bold text-slate-900">
                 <span className="flex items-center gap-1.5">
                   <FestivalFireIcon className="w-3.5 h-3.5 text-maroon" />
                   <span>THIRUVONAM</span>
                 </span>
-                <span className="text-maroon font-extrabold">Sep 4</span>
+                <span className="text-maroon font-extrabold">Aug 26, 2026</span>
               </div>
-              <div className="p-3 rounded-xl bg-white/60 border border-gold/20 flex justify-between items-center">
+              <div className="p-2.5 rounded-xl bg-white/60 border border-gold/20 flex justify-between items-center">
                 <span>Third Onam (Avittom)</span>
-                <span className="font-bold text-leaf-dark">Sep 5</span>
+                <span className="font-bold text-leaf-dark">Aug 27, 2026</span>
               </div>
             </div>
 
             <div className="mt-5 pt-3 border-t border-gold/20 flex gap-3">
-              <Link href="/admin" className="text-xs font-bold text-slate-600 hover:text-leaf kerala-link">
-                Admin Dashboard
+              <Link href="/admin/login" className="text-xs font-bold text-slate-600 hover:text-leaf kerala-link">
+                Admin Login
               </Link>
               <span className="text-slate-300">|</span>
-              <Link href="/staff" className="text-xs font-bold text-slate-600 hover:text-leaf kerala-link">
-                Staff Kitchen Portal
+              <Link href="/login?role=staff" className="text-xs font-bold text-slate-600 hover:text-leaf kerala-link">
+                Staff Login
               </Link>
             </div>
           </div>

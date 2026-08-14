@@ -16,7 +16,8 @@ export default function CountdownTimer() {
 
   useEffect(() => {
     setMounted(true);
-    const targetDate = new Date('2026-09-04T10:00:00').getTime();
+    // Thiruvonam 2026 in Kerala falls on August 26, 2026
+    const targetDate = new Date('2026-08-26T10:00:00').getTime();
 
     const interval = setInterval(() => {
       const now = new Date().getTime();
@@ -31,6 +32,7 @@ export default function CountdownTimer() {
         });
       } else {
         clearInterval(interval);
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     }, 1000);
 
@@ -77,21 +79,21 @@ export default function CountdownTimer() {
             <div>
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-maroon flex items-center justify-center sm:justify-start gap-1">
                 <FestivalFireIcon className="w-3.5 h-3.5" />
-                <span>Festival Countdown</span>
+                <span>Onam 2026 Countdown</span>
               </span>
               <h3 className="font-serif text-lg sm:text-xl lg:text-2xl font-bold text-leaf-dark">
                 Thiruvonam <span className="gold-gradient-text">2026</span> is Approaching!
               </h3>
-              <span className="text-[11px] text-slate-500 font-medium">September 4, 2026 • Kochi, Kerala</span>
+              <span className="text-[11px] text-slate-500 font-medium">August 26, 2026 • Valiyaparamba, Kerala 673602</span>
             </div>
           </div>
 
           {/* Counter Grid */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-3.5 w-full sm:w-auto">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-3.5 w-full sm:w-auto">
             {timeUnits.map((unit) => (
               <div
                 key={unit.label}
-                className="flex flex-col items-center justify-center bg-white border border-gold/30 rounded-2xl py-3 px-3 sm:px-5 shadow-soft min-w-[70px] relative overflow-hidden group hover:shadow-gold transition-shadow"
+                className="relative flex flex-col items-center justify-center bg-white border border-gold/30 rounded-2xl py-3 px-1 sm:px-5 min-w-0 shadow-soft overflow-hidden group hover:shadow-gold transition-shadow"
               >
                 {/* Background accent stripe */}
                 <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${unit.accent}`} />
